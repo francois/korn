@@ -6,14 +6,27 @@ module Korn
       @coercer ||= Coercible::Coercer.new
     end
 
-    Property = Struct.new(:name, :type) do
+    class Property
+      def initialize(name, type_or_malias=nil, malias=nil)
+        @name = name
+        if type_or_malias.is_a?(Class) then
+          @type = type_or_malias
+          @malias = malias || name
+        else
+          @type = String
+          @malias = type_or_malias || name
+        end
+      end
+
+      attr_reader :name, :type, :malias
+
       def coerce(value)
         Korn::Form.coercer[String].public_send("to_#{type.name.downcase}", value)
       end
     end
 
-    def self.property(name, type=nil)
-      (@properties ||= Array.new) << Property.new(name, type || String)
+    def self.property(name, type=nil, malias=nil)
+      (@properties ||= Array.new) << Property.new(name, type, malias)
     end
 
     def initialize(attributes=nil)
@@ -27,7 +40,7 @@ module Korn
     def copy_from(model)
       self.tap do
         self.class.instance_variable_get("@properties").each do |prop|
-          attributes[prop.name.to_s] = model.public_send(prop.name.to_sym)
+          attributes[prop.name.to_s] = model.public_send(prop.malias.to_sym)
         end
       end
     end
@@ -37,7 +50,7 @@ module Korn
         self.class.instance_variable_get("@properties").each do |prop|
           value = attributes.fetch(prop.name.to_s)
           coerced_value = prop.coerce(value)
-          model.public_send("#{prop.name}=", coerced_value)
+          model.public_send("#{prop.malias}=", coerced_value)
         end
       end
     end
