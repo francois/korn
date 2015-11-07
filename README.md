@@ -1,8 +1,81 @@
 # Korn
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/korn`. To experiment with that code, run `bin/console` for an interactive prompt.
+Korn is a data mapper from Hash to data model. Korn maps the messy HTTP forms world into nice and clean object models.
 
-TODO: Delete this and the text above, and describe your gem
+## Usage
+
+```ruby
+require "korn/form"
+
+class CategoryForm < Korn::Form
+  # Map a "code" property from the HTTP params into the accessor named "category_code="
+  property :code, :category_code
+
+  # Map an "id" property from the HTTP params into the accessor named "id="
+  # Coerce this value to an Integer
+  property :id, Integer
+
+  # Map the "valid_on" property, coercing to a Date object when copying
+  # to the model, if necessary
+  property :valid_starting_on, Date
+
+  collection :names, ->{ CategoryName.new } do
+    property :id, Integer
+    property :lang
+    property :name
+  end
+
+  collection :synonyms, ->{ CategorySynonym.new } do
+    properties :id, Integer
+    # Shortcut when multiple properties share the same options
+    properties :lang, :name
+  end
+end
+
+# In a Rails controller
+class CategoriesController < ApplicationController
+  def new
+    @form = CategoryForm.new
+  end
+
+  def edit
+    model = Category.find(params[:id])
+    @form = CategoryForm.new
+    @form.copy_from(model)
+
+    # Shortcut API
+    @form = CategoryForm[Category.find(params[:id])]
+  end
+
+  def create
+    @form = CategoryForm.new(params[:category])
+    if @form.valid? then
+      model = @form.copy_to(Category.new)
+      model.save!
+      render_with @form
+    else
+      render
+    end
+
+    # Alternatively... using the shortcut API
+    @form = CategoryForm[params[:category]] do |form|
+      # The form is guaranteed valid here
+      form.copy_to(Category.new).save!
+
+      # Make sure to never leave the block if you don't want to
+      # generate DoubleRender errors!
+      return render_with form
+    end
+
+    # else, validation failed and we need to redisplay the form
+    render
+  end
+end
+```
+
+## Explicitness
+
+This library aims to be very explicit: everything is exposed; magic is reduced to an absolute minimum, and only where it makes sense (the `#[]` shortcut API for instantiating a form and copying values).
 
 ## Installation
 
@@ -19,10 +92,6 @@ And then execute:
 Or install it yourself as:
 
     $ gem install korn
-
-## Usage
-
-TODO: Write usage instructions here
 
 ## Development
 
