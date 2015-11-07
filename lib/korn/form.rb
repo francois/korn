@@ -1,7 +1,17 @@
 module Korn
   class Form
-    def self.property(name)
-      (@properties ||= Array.new) << name
+    Property = Struct.new(:name, :type) do
+      def coerce(value)
+        if type == Date then
+          Date.parse(value)
+        else
+          value
+        end
+      end
+    end
+
+    def self.property(name, type=nil)
+      (@properties ||= Array.new) << Property.new(name, type || String)
     end
 
     def initialize(attributes=nil)
@@ -9,12 +19,13 @@ module Korn
     end
 
     # Attributes must *always* have String keys
+    # Values must *always* be instances of Property
     attr_reader :attributes
 
     def copy_from(model)
       self.tap do
         self.class.instance_variable_get("@properties").each do |prop|
-          attributes[prop.to_s] = model.public_send(prop)
+          attributes[prop.name.to_s] = model.public_send(prop.name.to_sym)
         end
       end
     end
@@ -22,7 +33,9 @@ module Korn
     def copy_to(model)
       model.tap do |m|
         self.class.instance_variable_get("@properties").each do |prop|
-          model.public_send("#{prop}=", attributes.fetch(prop.to_s))
+          value = attributes.fetch(prop.name.to_s)
+          coerced_value = prop.coerce(value)
+          model.public_send("#{prop.name}=", coerced_value)
         end
       end
     end
