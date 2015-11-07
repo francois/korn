@@ -10,6 +10,12 @@ class KornBasicForm < MiniTest::Test
     assert_equal "My Name", model.name
   end
 
+  def test_reads_name_from_model
+    model = Model1.new.tap{|m| m.name = "John Smith"}
+    form = Model1Form.new.copy_from(model)
+    assert_equal "John Smith", form.name
+  end
+
   class Model2Form < Korn::Form
     property :name
     property :category
@@ -20,5 +26,12 @@ class KornBasicForm < MiniTest::Test
     model = form.copy_to(Model2.new)
     assert_equal "Francois", model.name
     assert_equal "developer", model.category
+  end
+
+  def test_reads_name_and_category_from_model
+    model = Model2.new.tap{|m| m.name = "Jane Smith" ; m.category = "assassin"}
+    form = Model2Form.new.copy_from(model)
+    assert_equal "Jane Smith", form.name
+    assert_equal "assassin", form.category
   end
 end
