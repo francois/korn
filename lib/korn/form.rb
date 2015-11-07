@@ -1,12 +1,14 @@
+require "coercible"
+
 module Korn
   class Form
+    def self.coercer
+      @coercer ||= Coercible::Coercer.new
+    end
+
     Property = Struct.new(:name, :type) do
       def coerce(value)
-        if type == Date then
-          Date.parse(value)
-        else
-          value
-        end
+        Korn::Form.coercer[String].public_send("to_#{type.name.downcase}", value)
       end
     end
 
