@@ -26,9 +26,9 @@ class CategoryForm < Korn::Form
   end
 
   collection :synonyms, ->{ CategorySynonym.new } do
-    properties :id, Integer
+    property :id, Integer
     # Shortcut when multiple properties share the same options
-    properties :lang, :name
+    properties :lang, :name, String
   end
 end
 
