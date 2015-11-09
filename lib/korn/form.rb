@@ -68,8 +68,9 @@ module Korn
       @attributes = attributes || Hash.new
     end
 
-    # Attributes must *always* have String keys
-    # Values must *always* be instances of Property
+    # Attributes must *always* have String keys.
+    # Values must *always* be instances of Property or Collection.
+    # In fact, values must support the #copy_model_to_attrs and #copy_attrs_to_model methods.
     attr_reader :attributes
 
     # @return The Form instance
