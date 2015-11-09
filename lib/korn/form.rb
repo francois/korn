@@ -45,7 +45,12 @@ module Korn
       end
 
       def coerce(value)
-        Korn::Form.coercer[String].public_send("to_#{type.name.downcase}", value)
+        case type.name.downcase
+        when "bigdecimal"
+          Korn::Form.coercer[String].public_send("to_decimal", value)
+        else
+          Korn::Form.coercer[String].public_send("to_#{type.name.downcase}", value)
+        end
       end
     end
 
